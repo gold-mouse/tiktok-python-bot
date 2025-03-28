@@ -15,21 +15,21 @@ from utility import sleep_like_human, update_status
 from constants import RETRYABLE_COUNT
 
 def wait_and_click(driver: Any, xpath: str, retry: int = RETRYABLE_COUNT) -> None:
-    for i in range(retry):
+    for i in range(retry): # type: ignore
         try:
             WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
             break
-        except Exception as e:
+        except Exception as e: # type: ignore
             update_status("retrying...")
             sleep_like_human()
             driver.refresh()
 
 def wait_and_send_keys(driver: Any, xpath: str, keys: str, retry: int = RETRYABLE_COUNT) -> None:
-    for i in range(retry):
+    for i in range(retry): # type: ignore
         try:
             WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, xpath))).send_keys(keys)
             break
-        except Exception as e:
+        except Exception as e: # type: ignore
             update_status("retrying...")
             sleep_like_human()
             driver.refresh()

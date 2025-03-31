@@ -41,8 +41,18 @@ def launch_driver(profile: str):
         options.add_argument("--log-level=3") # type: ignore
         options.add_experimental_option("useAutomationExtension", False) # type: ignore
         options.add_experimental_option("excludeSwitches", ["enable-automation"]) # type: ignore
+        # adding argument to disable the AutomationControlled flag 
+        options.add_argument("--disable-blink-features=AutomationControlled") # type: ignore
+        # exclude the collection of enable-automation switches 
+        options.add_experimental_option("excludeSwitches", ["enable-automation"]) # type: ignore
+        # turn-off userAutomationExtension 
+        options.add_experimental_option("useAutomationExtension", False) # type: ignore
+        options.add_experimental_option("excludeSwitches", ["enable-automation"]) # type: ignore
         options.add_argument(f"user-data-dir=" + os.path.join(os.path.dirname(os.path.abspath(__file__)), f"chrome_profiles/{profile}")) # type: ignore
         driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options, keep_alive=True)
+
+        # changing the property of the navigator value for webdriver to undefined 
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})") # type: ignore
 
         return driver
     except Exception as e:
@@ -57,16 +67,12 @@ def login(username: str, password: str) -> Dict[str, Any] | None:
     
     driver.get("https://www.tiktok.com/login/phone-or-email/email")
     
-    usernameField = driver.find_element(By.XPATH, "//form//input[@name='username']")
-    passwordField = driver.find_element(By.XPATH, "//form//input[@type='password']")
-
-    usernameField.send_keys(username)
-    passwordField.send_keys(password)
+    wait_and_send_keys(driver=driver, xpath="//form//input[@name='username']", keys=username)
+    wait_and_send_keys(driver=driver, xpath="//form//input[@type='password']", keys=password)
 
     sleep_like_human()
 
-    loginButton = driver.find_element(By.XPATH, "//form//button[@type='submit']")
-    loginButton.click()
+    wait_and_click(driver=driver, xpath="//form//button[@type='submit']")
 
     driver_model.set_driver(username, driver)
 
@@ -90,7 +96,8 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
     for i in range(len(searched_links)):
         searched_videos.append({
             "link": searched_links[i].get_attribute("href"),
-            "img": searched_imgs[i].get_attribute("src")
+            "img": searched_imgs[i].get_attribute("src"),
+            "id": i
         })
     return { "status": True, "message": "success", "data": searched_videos }
 

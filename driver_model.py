@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 class DriverModel:
     def __init__(self):
@@ -12,5 +12,9 @@ class DriverModel:
 
     def remove_driver(self, username: str):
         self.drivers.pop(username)
+
+    def get_keys(self) -> List[str]:
+        allkeys = self.drivers.keys()
+        return list(allkeys)
 
 driver_model = DriverModel()

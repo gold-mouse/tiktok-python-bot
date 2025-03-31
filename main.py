@@ -27,6 +27,10 @@ def user_login():
     except Exception as e:
         print(e)
         return "Something went wrong", 500
+    
+@app.route("/api/get-users", methods=["GET"])
+def get_users():
+    return jsonify({ "status": True, "data": [{ "id": i + 1, "username": username } for i, username in enumerate(driver_model.get_keys())] }), 200
 
 @app.route("/api/keyword-search", methods=["GET"])
 def keyword_search():
@@ -110,6 +114,10 @@ def leave_comment():
 @app.route("/api/open-driver", methods=["GET"])
 def open_driver():
     username = request.args.get("username", "")
+
+    if driver_model.get_driver(username) != None:
+        return jsonify({"status": True, "message": f"Chrome already opened for {username}"})
+        
     driver = launch_driver(username)
     
     driver_model.set_driver(username, driver)

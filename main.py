@@ -3,7 +3,7 @@ from flask_cors import CORS
 
 from constants import PORT
 from chrome_actions import launch_driver, login, search, follow, favorite, leaveComment
-from driver_model import driver_model
+from model import driver_model
 
 app = Flask(__name__, static_folder="views", static_url_path="")
 CORS(app)

@@ -1,8 +1,13 @@
+import pyautogui
+from typing import Any
+from halo import Halo # type: ignore
 from time import sleep
 from datetime import datetime
 import random
+from pywinauto import Application # type: ignore
 
 from constants import MAX_DELAY, MIN_DELAY
+from model import driver_model
 
 def update_status(msg: str):
     now = datetime.now()
@@ -10,29 +15,47 @@ def update_status(msg: str):
 
     print(str(current_time) + " - " + str(msg))
     
-def get_random_sec():
-    randomTime = random.randint(MIN_DELAY, MAX_DELAY)
-    return randomTime
+def get_random_sec(a: int, b: int):
+    if 0 < b < a:
+        return random.randint(MIN_DELAY, MAX_DELAY)
+    return random.randint(a if a > 0 else MIN_DELAY, b if b > 0 else MAX_DELAY)
     
-def sleep_like_human(sec: int = get_random_sec()):
+def sleep_like_human(a: int = 0, b: int = 0):
+    sec = get_random_sec(a, b)
     update_status(f"delay for {sec} seconds")
-    sleep(sec)
+    for remaining in range(sec, 0, -1):
+        with Halo(text=f"{remaining} seconds remaining...", spinner="dots"):
+            sleep(0.9)
+        print("\r", end="") 
 
-# def interceptor(request):
+def click_element(element: Any, username: str):
+    try:
 
-#     # add the missing headers
-#     request.headers["Accept-Language"] = "en-US,en;q=0.9"
-#     request.headers["Referer"] = "https://www.google.com/"
+        # bring_chrome_to_front(username)
+        location = element.location
+        size = element.size
 
-#     # delete the existing misconfigured default headers values
-#     del request.headers["User-Agent"]
-#     del request.headers["Sec-Ch-Ua"]
-#     del request.headers["Sec-Fetch-Site"]
-#     del request.headers["Accept-Encoding"]
-#     del request.headers["x-client-data"]
+        offset = driver_model.get_browser_offset(username)
+        
+        # Calculate the center of the element
+        x = location['x'] + size['width'] // 2
+        y = location['y'] + offset + size['height'] // 2
+
+        update_status(f"The element is located at ({x}, {y})")
+        
+        pyautogui.moveTo(x, y, duration=0.5)  # Smooth movement
+        pyautogui.click()
+
+        return True
+
+    except Exception as e: # type: ignore
+        return False
     
-#     # replace the deleted headers with edited values
-#     request.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-#     request.headers["Sec-Ch-Ua"] = "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"122\""
-#     request.headers["Sec-Fetch-Site"] = "cross-site"
-#     request.headers["Accept-Encoding"] = "gzip, deflate, br, zstd"
+def bring_chrome_to_front(username: str):
+    """ Bring the correct Chrome window to the front """
+    pid = driver_model.get_chrome_pid(username)
+    app: Any = Application().connect(process=pid)  # type: ignore
+    window = app.top_window()
+    window.set_focus()
+    sleep(0.5)
+    window.bring_to_front()

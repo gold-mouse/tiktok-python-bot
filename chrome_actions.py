@@ -4,38 +4,52 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
 import os
 
 from selenium.webdriver.common.by import By
 from typing import Dict, Any, List
 
-from driver_model import driver_model
-from utility import sleep_like_human, update_status
+from model import driver_model
+from utility import sleep_like_human, update_status, click_element
 
 from constants import RETRYABLE_COUNT
 
-def wait_and_click(driver: Any, xpath: str, retry: int = RETRYABLE_COUNT) -> None:
+def wait_and_get_element(driver: Any, selectorStr: str, retry: int = RETRYABLE_COUNT, by: str = By.XPATH) -> Any:
     for i in range(retry): # type: ignore
         try:
-            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
-            break
+            update_status("Getting Element...")
+            return WebDriverWait(driver, 20).until(EC.presence_of_element_located((by, selectorStr)))
         except Exception as e: # type: ignore
             update_status("retrying...")
-            sleep_like_human()
             driver.refresh()
+            sleep_like_human(10, 15)
 
-def wait_and_send_keys(driver: Any, xpath: str, keys: str, retry: int = RETRYABLE_COUNT) -> None:
+def wait_and_click(driver: Any, selectorStr: str, retry: int = RETRYABLE_COUNT, by: str = By.XPATH) -> None:
     for i in range(retry): # type: ignore
         try:
-            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, xpath))).send_keys(keys)
+            update_status("Getting Element...")
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((by, selectorStr))).click()
             break
         except Exception as e: # type: ignore
             update_status("retrying...")
-            sleep_like_human()
             driver.refresh()
+            sleep_like_human(10, 15)
+
+def wait_and_send_keys(driver: Any, selectorStr: str, keys: str, retry: int = RETRYABLE_COUNT, by: str = By.XPATH) -> None:
+    for i in range(retry): # type: ignore
+        try:
+            update_status("Getting Element...")
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((by, selectorStr))).send_keys(keys)
+            break
+        except Exception as e: # type: ignore
+            update_status("retrying...")
+            driver.refresh()
+            sleep_like_human(10, 15)
 
 def launch_driver(profile: str):
     try:
+
         options = Options()
         options.add_argument("start-maximized") # type: ignore
         options.add_argument("--log-level=3") # type: ignore
@@ -67,12 +81,15 @@ def login(username: str, password: str) -> Dict[str, Any] | None:
     
     driver.get("https://www.tiktok.com/login/phone-or-email/email")
     
-    wait_and_send_keys(driver=driver, xpath="//form//input[@name='username']", keys=username)
-    wait_and_send_keys(driver=driver, xpath="//form//input[@type='password']", keys=password)
+    wait_and_send_keys(driver=driver, selectorStr="//form//input[@name='username']", keys=username)
+    wait_and_send_keys(driver=driver, selectorStr="//form//input[@type='password']", keys=password)
 
     sleep_like_human()
 
-    wait_and_click(driver=driver, xpath="//form//button[@type='submit']")
+    element = wait_and_get_element(driver=driver, selectorStr="//form//button[@type='submit']")
+    click_element(element, username)
+
+    # wait_and_click(driver=driver, selectorStr="//form//button[@type='submit']")
 
     driver_model.set_driver(username, driver)
 
@@ -92,7 +109,6 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
 
     searched_videos: List[Dict[str, Any]] = [] # type: ignore
 
-    print(len(searched_links), "------>>>shit")
     for i in range(len(searched_links)):
         searched_videos.append({
             "link": searched_links[i].get_attribute("href"),
@@ -111,7 +127,9 @@ def follow(username: str, link: str) -> Dict[str, Any] | None:
 
     sleep_like_human()
 
-    wait_and_click(driver=driver, xpath="//article/div/section[2]/button[2]")
+    element = wait_and_get_element(driver=driver, selectorStr="//article/div/section[2]/button[2]")
+    click_element(element=element, username=username)
+    # wait_and_click(driver=driver, selectorStr="//article/div/section[2]/button[2]")
 
     return { "status": True, "message": "success" }
 
@@ -125,7 +143,9 @@ def favorite(username: str, link: str) -> Dict[str, Any] | None:
 
     sleep_like_human()
 
-    wait_and_click(driver=driver, xpath="//article/div/section[2]/div[4]")
+    element = wait_and_get_element(driver=driver, selectorStr="//article/div/section[2]/div[4]")
+    click_element(element=element, username=username)
+    # wait_and_click(driver=driver, selectorStr="//article/div/section[2]/div[4]")
 
     return { "status": True, "message": "success" }
 
@@ -139,14 +159,14 @@ def leaveComment(username: str, link: str, comment: str = "Wonderful, I like it"
 
     sleep_like_human()
 
-    wait_and_click(driver=driver, xpath="//div[@id='comments']")
+    wait_and_click(driver=driver, selectorStr="//div[@id='comments']")
 
-    wait_and_click(driver=driver, xpath="//button[@id='comments']")
+    wait_and_click(driver=driver, selectorStr="//button[@id='comments']")
 
-    wait_and_send_keys(driver=driver, xpath="//div[@class='DraftEditor-editorContainer']/div[@class='notranslate public-DraftEditor-content' and starts-with(@aria-describedby, 'placeholder')]", keys=comment)
+    wait_and_send_keys(driver=driver, selectorStr="//div[@class='DraftEditor-editorContainer']/div[@class='notranslate public-DraftEditor-content' and starts-with(@aria-describedby, 'placeholder')]", keys=comment)
 
     sleep_like_human(3)
 
-    wait_and_click(driver=driver, xpath="//div[@data-e2e='comment-post']")
+    wait_and_click(driver=driver, selectorStr="//div[@data-e2e='comment-post']")
 
     return { "status": True, "message": "success" }

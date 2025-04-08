@@ -45,3 +45,15 @@ MAX_DELAY=40
 RETRYABLE_COUNT=3
 PORT=5000
 ```
+
+## Note
+If you faced bellow error:
+```sh
+ModuleNotFoundError: No module named 'pkg_resources'
+```
+You have to upgrade setuptools to latest version
+
+```sh
+pip install --upgrade setuptools
+```
+

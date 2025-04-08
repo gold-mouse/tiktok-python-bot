@@ -30,7 +30,7 @@ def user_login():
     
 @app.route("/api/get-users", methods=["GET"])
 def get_users():
-    return jsonify({ "status": True, "data": [{ "id": i + 1, "username": username } for i, username in enumerate(driver_model.get_keys())] }), 200
+    return jsonify({ "status": True, "data": [{ "id": i + 1, "username": username } for i, username in enumerate(driver_model.get_usernames_from_driverkyes())] }), 200
 
 @app.route("/api/keyword-search", methods=["GET"])
 def keyword_search():

@@ -206,8 +206,8 @@ def search(username: str, keyword: str, comment: str) -> Dict[str, Any] | None:
     update_status("Processing video...")
 
     if len(searched_videos) > 0:
-        searched_videos = searched_videos[:3] # splice first 10 for testing porses
-        update_status("Only processing first 10 videos for testing purposes", "info")
+        searched_videos = searched_videos[:5] # splice first 5 for testing porses
+        update_status("Only processing first 5 videos for testing purposes", "info")
 
 
     return {

@@ -220,14 +220,26 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
             "link": href,
             "img": src,
             "id": i,
-            "result": main_action(username, href)
         })
-    return { "status": True, "message": "success", "data": searched_videos }
+
+    update_status(f"Found {len(searched_videos)} videos")
+    update_status("Processing video...")
+    
+    return {
+        "status": True,
+        "message": "success",
+        "data": [
+            {
+                "id": videoInfo["id"],
+                "link": videoInfo["link"],
+                "img": videoInfo["img"],
+                "result": main_action(username, videoInfo["link"])
+            } for videoInfo in searched_videos
+        ]
+    }
 
 def main_action(username: str, link: str) -> Dict[str, Any] | None:
 
-    update_status("Processing video...")
-    update_status(f"Link: {link}")
     driver = driver_model.get_driver(username)
 
     driver = navigate(driver=driver, link=link)
@@ -245,6 +257,8 @@ def main_action(username: str, link: str) -> Dict[str, Any] | None:
 
     comment_res = leaveComment(driver=driver)
 
+    update_status("Done")
+    update_status(f"Link: {link}")
     return {
         "success": heart_res and favorite_res and comment_res,
         "data": {

@@ -2,6 +2,9 @@
 
 ## Prerequisites
 Ensure you have the hearting installed on your system:
+1. Python
+2. Google Chrome latest version
+3. Ensure Google Chrome Path - C:\Program Files\Google\Chrome\Application\chrome.exe
 
 ### Install Python
 Download and install Python from the [official Python website](https://www.python.org/downloads/).

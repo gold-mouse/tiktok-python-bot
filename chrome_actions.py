@@ -18,15 +18,13 @@ from utility import sleep_like_human, update_status
 from constants import RETRYABLE_COUNT, BYPASSING_BOT_API_KEY, ELEMENT_CSS
 
 def bypass_robot(driver: Any):
-    update_status("Solving Captcha if present...")
+    update_status("Solving Captcha if present...", "info")
     sadcaptcha = SeleniumSolver( # type: ignore
         driver,
         BYPASSING_BOT_API_KEY,
-        mouse_step_size=1, # Adjust to change mouse speed
-        mouse_step_delay_ms=10 # Adjust to change mouse speed
+        mouse_step_size=1,
+        mouse_step_delay_ms=10
     )
-
-    # Selenium code that causes a TikTok or Douyin captcha...
 
     sadcaptcha.solve_captcha_if_present() # type: ignore
 
@@ -47,23 +45,20 @@ def smooth_scroll_for_duration(driver: uc.Chrome, duration: int = 20, scroll_inc
     
     spinner = Halo(text=f'Scrolling to fetch data for {duration} seconds...', spinner='dots') # type: ignore
     spinner.start() # type: ignore
-    start_time = time()  # Record the start time
+    start_time = time()
     
     while True:
         driver.execute_script(f"window.scrollBy(0, {scroll_increment});") # type: ignore
         
-        # Wait for the scroll to finish
         sleep(random.uniform(*(0.1, 0.3)))
 
-        # Check how much time has passed
         elapsed_time = time() - start_time
         
-        # Stop scrolling after the specified duration
         if elapsed_time >= duration:
             break
 
     spinner.stop() # type: ignore
-    update_status("Scrolling finished!")
+    update_status("Scrolling finished!", "info")
 
 def human_typing(element: Any, text: str, delay_range: tuple[float, float]=(0.05, 0.2)):
     for char in text:
@@ -78,8 +73,7 @@ def wait_and_get_element(driver: Any, selectorStr: str, by: str, logStr: str, re
                 update_status("Getting Element...")
                 return WebDriverWait(driver, 10).until(EC.presence_of_element_located((by, selector)))
             except Exception as e: # type: ignore
-                print(selector)
-                print(e)
+                update_status(f"Failed to get element: {selector}", "error")
                 if retry == 1:
                     return None
                 update_status("retrying...")
@@ -104,8 +98,7 @@ def wait_and_click(driver: Any, selectorStr: str | List[str], by: str, logStr: s
                 sleep_like_human()
                 return True
             except Exception as e: # type: ignore
-                print(selector)
-                print(e)
+                update_status(f"Failed to click element: {selector}", "error")
                 if retry == 1:
                     return False
                 update_status("retrying...")
@@ -132,8 +125,7 @@ def wait_and_send_keys(driver: Any, selectorStr: str | List[str], by: str, logSt
                 sleep_like_human()
                 return True
             except Exception as e: # type: ignore
-                print(selector)
-                print(e)
+                update_status(f"Failed to send keys to element: {selector}", "error")
                 if retry == 1:
                     return False
                 update_status("retrying...")
@@ -194,7 +186,7 @@ def login(username: str, password: str) -> Dict[str, Any] | None:
 
     return { "status": True, "message": "success" }
 
-def search(username: str, keyword: str) -> Dict[str, Any] | None:
+def search(username: str, keyword: str, comment: str) -> Dict[str, Any] | None:
     driver = driver_model.get_driver(username)
 
     if driver == None:
@@ -224,7 +216,12 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
 
     update_status(f"Found {len(searched_videos)} videos")
     update_status("Processing video...")
-    
+
+    if len(searched_videos) > 0:
+        searched_videos = searched_videos[:10] # splice first 10 for testing porses
+        update_status("Only processing first 10 videos for testing purposes", "info")
+
+
     return {
         "status": True,
         "message": "success",
@@ -233,12 +230,12 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
                 "id": videoInfo["id"],
                 "link": videoInfo["link"],
                 "img": videoInfo["img"],
-                "result": main_action(username, videoInfo["link"])
+                "result": main_action(username, videoInfo["link"], comment)
             } for videoInfo in searched_videos
         ]
     }
 
-def main_action(username: str, link: str) -> Dict[str, Any] | None:
+def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None:
 
     driver = driver_model.get_driver(username)
 
@@ -255,10 +252,12 @@ def main_action(username: str, link: str) -> Dict[str, Any] | None:
 
     favorite_res = wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("favorite", []), logStr="Clicking favorite...", by=By.CSS_SELECTOR)
 
-    comment_res = leaveComment(driver=driver)
+    comment_res = leaveComment(driver=driver, comment=comment)
 
-    update_status("Done")
+    update_status("Done", "info")
     update_status(f"Link: {link}")
+
+    sleep_like_human(1, 3)
     return {
         "success": heart_res and favorite_res and comment_res,
         "data": {
@@ -270,7 +269,7 @@ def main_action(username: str, link: str) -> Dict[str, Any] | None:
 
 def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
 
-    wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("open-comment", []), logStr="Opening comments...", by=By.CSS_SELECTOR, retry=1)
+    # wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("open-comment", []), logStr="Opening comments...", by=By.CSS_SELECTOR, retry=1)
     sendKey_res = wait_and_send_keys(
         driver=driver,
         selectorStr=ELEMENT_CSS.get("comment-input-field", []),
@@ -279,16 +278,16 @@ def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
         retry=1
     )
 
-    sleep_like_human()
-
     if not sendKey_res:
-        print("Failed to send comment")
+        print("Failed to send comment", "error")
         return False
     
-    postComment = wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("post-button", []), logStr="Posting comment...", by=By.CSS_SELECTOR, retry=1)
-
-    if not postComment:
-        print("Failed to post comment")
+    try:
+        update_status("Posting comment...")
+        element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-post']"))) # type: ignore
+        driver.execute_script("arguments[0].click();", element) # type: ignore
+    except Exception as e:
+        print("Failed to post comment", "error")
         return False
 
     return True

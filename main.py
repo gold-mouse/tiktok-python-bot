@@ -57,11 +57,12 @@ def keyword_search():
     try:
         keyword = request.args.get("keyword", "")
         username = request.args.get("username", "")
+        comment = request.args.get("comment", "Wonderful, I like it")
 
         if keyword == "" or username == "":
             return jsonify({ "status": False, "message": "Missing payload" })
 
-        res = search(username=username, keyword=keyword)
+        res = search(username=username, keyword=keyword, comment=comment)
 
         return jsonify(res), 200
     except Exception as e:

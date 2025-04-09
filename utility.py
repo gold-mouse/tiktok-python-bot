@@ -1,15 +1,26 @@
 from halo import Halo # type: ignore
 from time import sleep
 from datetime import datetime
+from colorama import Fore
 import random
 
 from constants import MAX_DELAY, MIN_DELAY
 
-def update_status(msg: str):
+def update_status(msg: str, context: str = "normal"):
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    print(str(current_time) + " - " + str(msg))
+    # Determine color based on context
+    if context == "error":
+        color = Fore.RED
+    elif context == "warning":
+        color = Fore.YELLOW
+    elif context == "info":
+        color = Fore.BLUE
+    else:  # normal context or any other unspecified context
+        color = Fore.WHITE
+    
+    print(color + str(current_time) + " - " + str(msg))
     
 def get_random_sec(a: int, b: int):
     if 0 < b < a:

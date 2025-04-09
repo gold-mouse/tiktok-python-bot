@@ -10,7 +10,7 @@ import random
 from halo import Halo # type: ignore
 
 from selenium.webdriver.common.by import By
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union, Callable
 
 from model import driver_model
 from utility import sleep_like_human, update_status
@@ -65,81 +65,70 @@ def human_typing(element: Any, text: str, delay_range: tuple[float, float]=(0.05
         element.send_keys(char)
         sleep(random.uniform(*delay_range))
 
-def wait_and_get_element(driver: Any, selectorStr: str, by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> Any:
+def retry_action(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, action: Callable[[str], bool], retry: int) -> bool:
     update_status(logStr)
-    def click_el(selector: str):
-        for i in range(retry): # type: ignore
-            try:
-                update_status("Getting Element...")
-                return WebDriverWait(driver, 10).until(EC.presence_of_element_located((by, selector)))
-            except Exception as e: # type: ignore
-                update_status(f"Failed to get element: {selector}", "error")
-                if retry == 1:
-                    return None
-                update_status("retrying...")
-                refresh(driver)
-        return None
     
-    if isinstance(selectorStr, list):
-        for sel in selectorStr:
-            if click_el(sel):
+    def try_selectors(selectors: List[str]) -> bool:
+        for sel in selectors:
+            if action(sel):
                 return True
         return False
-    else:
-        return click_el(selectorStr)
 
-def wait_and_click(driver: Any, selectorStr: str | List[str], by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> bool:
-    update_status(logStr)
-    def click_el(selector: str) -> bool:
-        for i in range(retry): # type: ignore
-            try:
-                update_status("Getting Element...")
-                WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector))).click()
-                sleep_like_human()
-                return True
-            except Exception as e: # type: ignore
-                update_status(f"Failed to click element: {selector}", "error")
-                if retry == 1:
-                    return False
-                update_status("retrying...")
-                refresh(driver)
+    selectors = selectorStr if isinstance(selectorStr, list) else [selectorStr]
 
-        return False
-    
-    if isinstance(selectorStr, list):
-        for sel in selectorStr:
-            if click_el(sel):
-                return True
-        return False
-    else:
-        return click_el(selectorStr)
+    for i in range(retry): # type: ignore
+        if try_selectors(selectors):
+            return True
+        update_status(f"Failed to process element: {selectorStr}", "error")
+        if retry == 1:
+            return False
+        update_status("retrying...")
+        refresh(driver)
 
-def wait_and_send_keys(driver: Any, selectorStr: str | List[str], by: str, logStr: str, keys: str, retry: int = RETRYABLE_COUNT) -> bool:
-    update_status(logStr)
-    def click_el(selector: str):
-        for i in range(retry): # type: ignore
-            try:
-                update_status("Getting Element...")
-                element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector)))
-                human_typing(element, keys)
-                sleep_like_human()
-                return True
-            except Exception as e: # type: ignore
-                update_status(f"Failed to send keys to element: {selector}", "error")
-                if retry == 1:
-                    return False
-                update_status("retrying...")
-                refresh(driver)
-            
+    return False
+
+def wait_and_get_element(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> Any:
+    def action(selector: str):
+        try:
+            update_status("Getting Element...")
+            return WebDriverWait(driver, 10).until(EC.presence_of_element_located((by, selector)))
+        except Exception:  # type: ignore
+            return None
+
+    result = [None]
+    def wrapped_action(sel: str) -> bool:
+        res = action(sel)
+        if res:
+            result[0] = res # type: ignore
+            return True
         return False
-    
-    if isinstance(selectorStr, list):
-        for sel in selectorStr:
-            if click_el(sel):
-                return True
-        return False
-    else:
-        return click_el(selectorStr)
+
+    return result[0] if retry_action(driver, selectorStr, by, logStr, wrapped_action, retry) else None
+
+def wait_and_click(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> bool:
+    def action(selector: str) -> bool:
+        try:
+            update_status("Getting Element...")
+            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector))).click()
+            sleep_like_human()
+            return True
+        except Exception:  # type: ignore
+            return False
+
+    return retry_action(driver, selectorStr, by, logStr, action, retry)
+
+def wait_and_send_keys(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, keys: str, retry: int = RETRYABLE_COUNT) -> bool:
+    def action(selector: str) -> bool:
+        try:
+            update_status("Getting Element...")
+            element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector)))
+            human_typing(element, keys)
+            sleep_like_human()
+            return True
+        except Exception:  # type: ignore
+            return False
+
+    return retry_action(driver, selectorStr, by, logStr, action, retry)
 
 def launch_driver(profile: str):
     try:
@@ -197,7 +186,6 @@ def search(username: str, keyword: str, comment: str) -> Dict[str, Any] | None:
 
     smooth_scroll_for_duration(driver)
 
-# "#tabs-0-panel-search_top div[mode='search-video-list'] > div"
     searched_links = driver.find_elements(By.CSS_SELECTOR, "#tabs-0-panel-search_top div[mode='search-video-list'] > div > div:nth-child(1) > div > div a")
     searched_imgs = driver.find_elements(By.CSS_SELECTOR, "#tabs-0-panel-search_top div[mode='search-video-list'] > div > div:nth-child(1) > div > div img")
 
@@ -218,7 +206,7 @@ def search(username: str, keyword: str, comment: str) -> Dict[str, Any] | None:
     update_status("Processing video...")
 
     if len(searched_videos) > 0:
-        searched_videos = searched_videos[:10] # splice first 10 for testing porses
+        searched_videos = searched_videos[:3] # splice first 10 for testing porses
         update_status("Only processing first 10 videos for testing purposes", "info")
 
 
@@ -239,9 +227,17 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
 
     driver = driver_model.get_driver(username)
 
-    driver = navigate(driver=driver, link=link)
+    driver.get(link)
+    sleep_like_human(2, 4)
 
-    videoEl = wait_and_get_element(driver=driver, selectorStr="video", by=By.CSS_SELECTOR, logStr="Getting video element...")
+    videoEl = None
+    for i in range(RETRYABLE_COUNT):
+        try:
+            videoEl = wait_and_get_element(driver=driver, selectorStr="video", by=By.CSS_SELECTOR, logStr="Getting video element...")
+            break
+        except Exception as e:
+            update_status("Not found video element", "error")
+            bypass_robot(driver)
 
     if (videoEl == None):
         return { "success": False, "message": "Video not found" }
@@ -257,7 +253,7 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
     update_status("Done", "info")
     update_status(f"Link: {link}")
 
-    sleep_like_human(1, 3)
+    sleep_like_human()
     return {
         "success": heart_res and favorite_res and comment_res,
         "data": {
@@ -268,26 +264,28 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
     }
 
 def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
-
-    # wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("open-comment", []), logStr="Opening comments...", by=By.CSS_SELECTOR, retry=1)
-    sendKey_res = wait_and_send_keys(
-        driver=driver,
-        selectorStr=ELEMENT_CSS.get("comment-input-field", []),
-        keys=comment, logStr="Sending comment...",
-        by=By.CSS_SELECTOR,
-        retry=1
-    )
-
-    if not sendKey_res:
-        print("Failed to send comment", "error")
-        return False
-    
-    try:
-        update_status("Posting comment...")
-        element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-post']"))) # type: ignore
-        driver.execute_script("arguments[0].click();", element) # type: ignore
-    except Exception as e:
-        print("Failed to post comment", "error")
-        return False
+    for i in range(2): # check if comment button is opened. If not, open it on second trying
+        sendKey_res = wait_and_send_keys(
+            driver=driver,
+            selectorStr=ELEMENT_CSS.get("comment-input-field", []),
+            keys=comment, logStr="Sending comment...",
+            by=By.CSS_SELECTOR,
+            retry=1
+        )
+        if not sendKey_res:
+            print("Failed to send comment", "error")
+            if i == 0:
+                wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("open-comment", []), logStr="Opening comments...", by=By.CSS_SELECTOR, retry=1)
+                continue
+            return False
+        
+        try:
+            update_status("Posting comment...")
+            element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-post']"))) # type: ignore
+            driver.execute_script("arguments[0].click();", element) # type: ignore
+            return True
+        except Exception as e:
+            print("Failed to post comment", "error")
+            return False
 
     return True

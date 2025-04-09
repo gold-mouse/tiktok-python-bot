@@ -41,12 +41,15 @@ python main.py
 ```
 
 ## Environment Variables
-If your project requires environment variables, create a `.env` file in the root directory and define them like this:
+You can get BYPASSING_BOT_API_KEY from https://www.sadcaptcha.com/ <br />
+Create a `.env` file in the root directory and define them like this:
 ```sh
+BYPASSING_BOT_API_KEY=YOUR_API_KEY
 MIN_DELAY=3
 MAX_DELAY=40
 RETRYABLE_COUNT=3
 PORT=5000
+
 ```
 
 ## Note

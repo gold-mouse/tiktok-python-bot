@@ -78,6 +78,7 @@ def wait_and_get_element(driver: Any, selectorStr: str, by: str, logStr: str, re
                 update_status("Getting Element...")
                 return WebDriverWait(driver, 10).until(EC.presence_of_element_located((by, selector)))
             except Exception as e: # type: ignore
+                print(selector)
                 print(e)
                 if retry == 1:
                     return None
@@ -131,6 +132,7 @@ def wait_and_send_keys(driver: Any, selectorStr: str | List[str], by: str, logSt
                 sleep_like_human()
                 return True
             except Exception as e: # type: ignore
+                print(selector)
                 print(e)
                 if retry == 1:
                     return False
@@ -211,27 +213,29 @@ def search(username: str, keyword: str) -> Dict[str, Any] | None:
 
     for i in range(len(searched_links)):
         src = searched_imgs[i].get_attribute("src")
+        href = searched_links[i].get_attribute("href")
         if src.startswith("data:"):
             continue
         searched_videos.append({
-            "link": searched_links[i].get_attribute("href"),
+            "link": href,
             "img": src,
-            "id": i
+            "id": i,
+            "result": main_action(username, href)
         })
     return { "status": True, "message": "success", "data": searched_videos }
 
 def main_action(username: str, link: str) -> Dict[str, Any] | None:
-    driver = driver_model.get_driver(username)
 
-    if driver == None:
-        return { "status": False, "message": "Can't find profile settings (Open chrome first)"}
+    update_status("Processing video...")
+    update_status(f"Link: {link}")
+    driver = driver_model.get_driver(username)
 
     driver = navigate(driver=driver, link=link)
 
     videoEl = wait_and_get_element(driver=driver, selectorStr="video", by=By.CSS_SELECTOR, logStr="Getting video element...")
 
     if (videoEl == None):
-        return { "status": False, "message": "Video not found" }
+        return { "success": False, "message": "Video not found" }
 
     driver.execute_script("arguments[0].pause()", videoEl) # once video is finished, necessary elements are disappeared. so it must be paused first
 
@@ -241,7 +245,14 @@ def main_action(username: str, link: str) -> Dict[str, Any] | None:
 
     comment_res = leaveComment(driver=driver)
 
-    return { "status": heart_res and favorite_res and comment_res, "message": f"Heart: {heart_res}, Favorite: {favorite_res}, Comment: {comment_res}" }
+    return {
+        "success": heart_res and favorite_res and comment_res,
+        "data": {
+            "heart": heart_res,
+            "favorite": favorite_res,
+            "comment": comment_res
+        }
+    }
 
 def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
 

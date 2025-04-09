@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from constants import PORT
-from chrome_actions import launch_driver, login, search, main_action
+from chrome_actions import launch_driver, login, search
 from model import driver_model
 
 app = Flask(__name__, static_folder="views", static_url_path="")
@@ -14,7 +14,6 @@ def before_request_middleware():
     open_chrome_endpoints = [
         "user_login",
         "keyword_search",
-        "total_action"
     ]
     if request.endpoint in open_chrome_endpoints:
         username = request.args.get("username", "")
@@ -63,23 +62,6 @@ def keyword_search():
             return jsonify({ "status": False, "message": "Missing payload" })
 
         res = search(username=username, keyword=keyword)
-
-        return jsonify(res), 200
-    except Exception as e:
-        print(e)
-        return jsonify({ "status": False, "message": "Something went wrong" })
-
-@app.route("/api/total-action", methods=["POST"])
-def total_action():
-    try:
-        body = request.get_json()
-        username = body.get("username", "")
-        link = body.get("link", "")
-
-        if link == "" or username == "":
-            return jsonify({ "status": False, "message": "Missing payload" })
-
-        res = main_action(username=username, link=link)
 
         return jsonify(res), 200
     except Exception as e:

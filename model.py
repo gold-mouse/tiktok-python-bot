@@ -11,8 +11,12 @@ class DriverModel:
         # Set driver
         self.drivers[username] = driver
 
+
     def remove_driver(self, username: str):
         self.drivers.pop(username)
+        
+    def check_driver(self, username: str) -> bool:
+        return username in self.drivers
 
     def get_usernames_from_driverkyes(self) -> List[str]:
         allkeys = self.drivers.keys()

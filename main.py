@@ -1,12 +1,36 @@
+from time import sleep
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from constants import PORT
-from chrome_actions import launch_driver, login, search, follow, favorite, leaveComment
+from chrome_actions import launch_driver, login, search, main_action
 from model import driver_model
 
 app = Flask(__name__, static_folder="views", static_url_path="")
 CORS(app)
+
+@app.before_request
+def before_request_middleware():
+    open_chrome_endpoints = [
+        "user_login",
+        "keyword_search",
+        "total_action"
+    ]
+    if request.endpoint in open_chrome_endpoints:
+        username = request.args.get("username", "")
+        if request.method == "POST":
+            body = request.get_json()
+            username = body.get("username", "")
+
+        if username == "":
+            return jsonify({ "status": False, "message": "Missing payload" })
+        
+        isExist = driver_model.check_driver(username)
+
+        if not isExist:
+            driver = launch_driver(username)
+            driver_model.set_driver(username, driver)
+            sleep(7)
 
 @app.route("/api/user-login", methods=["POST"])
 def user_login():
@@ -16,17 +40,14 @@ def user_login():
         password = body.get("password", "")
 
         if username == "" or password == "":
-            return "Missing payload", 400
+            return jsonify({ "status": False, "message": "Missing payload" })
 
         res = login(username, password)
             
-        if res == None:
-            return "Something went wrong", 500
-
         return jsonify(res), 200
     except Exception as e:
         print(e)
-        return "Something went wrong", 500
+        return jsonify({ "status": False, "message": "Something went wrong" })
     
 @app.route("/api/get-users", methods=["GET"])
 def get_users():
@@ -39,89 +60,31 @@ def keyword_search():
         username = request.args.get("username", "")
 
         if keyword == "" or username == "":
-            return "Missing payload", 400
+            return jsonify({ "status": False, "message": "Missing payload" })
 
         res = search(username=username, keyword=keyword)
-            
-        if res == None:
-            return "Something went wrong", 500
 
         return jsonify(res), 200
     except Exception as e:
         print(e)
-        return "Something went wrong", 500
+        return jsonify({ "status": False, "message": "Something went wrong" })
 
-@app.route("/api/follow-video", methods=["POST"])
-def follow_video():
+@app.route("/api/total-action", methods=["POST"])
+def total_action():
     try:
         body = request.get_json()
         username = body.get("username", "")
         link = body.get("link", "")
 
         if link == "" or username == "":
-            return "Missing payload", 400
+            return jsonify({ "status": False, "message": "Missing payload" })
 
-        res = follow(username=username, link=link)
-            
-        if res == None:
-            return "Something went wrong", 500
+        res = main_action(username=username, link=link)
 
         return jsonify(res), 200
     except Exception as e:
         print(e)
-        return "Something went wrong", 500
-
-@app.route("/api/save-video", methods=["POST"])
-def save_video():
-    try:
-        body = request.get_json()
-        username = body.get("username", "")
-        link = body.get("link", "")
-
-        if link == "" or username == "":
-            return "Missing payload", 400
-
-        res = favorite(username=username, link=link)
-            
-        if res == None:
-            return "Something went wrong", 500
-
-        return jsonify(res), 200
-    except Exception as e:
-        print(e)
-        return "Something went wrong", 500
-
-@app.route("/api/leave-comment", methods=["POST"])
-def leave_comment():
-    try:
-        body = request.get_json()
-        username = body.get("username", "")
-        link = body.get("link", "")
-
-        if link == "" or username == "":
-            return "Missing payload", 400
-
-        res = leaveComment(username=username, link=link)
-            
-        if res == None:
-            return "Something went wrong", 500
-
-        return jsonify(res), 200
-    except Exception as e:
-        print(e)
-        return "Something went wrong", 500
-
-@app.route("/api/open-driver", methods=["GET"])
-def open_driver():
-    username = request.args.get("username", "")
-
-    if driver_model.get_driver(username) != None:
-        return jsonify({"status": True, "message": f"Chrome already opened for {username}"})
-        
-    driver = launch_driver(username)
-    
-    driver_model.set_driver(username, driver)
-    return jsonify({"status": True, "message": f"Chrome opened for {username}"})
+        return jsonify({ "status": False, "message": "Something went wrong" })
 
 @app.route("/api/close-driver", methods=["GET"])
 def close_driver():

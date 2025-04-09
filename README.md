@@ -1,7 +1,7 @@
 # Python Project Setup Guide
 
 ## Prerequisites
-Ensure you have the following installed on your system:
+Ensure you have the hearting installed on your system:
 
 ### Install Python
 Download and install Python from the [official Python website](https://www.python.org/downloads/).

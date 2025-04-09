@@ -9,13 +9,22 @@ RETRYABLE_COUNT: int = int(os.getenv('RETRYABLE_COUNT', 0))
 PORT: int = int(os.getenv("PORT", 5000))
 BYPASSING_BOT_API_KEY = os.getenv('BYPASSING_BOT_API_KEY', "")
 
-ELEMENT_PATHS = {
+ELEMENT_CSS = {
     "heart": [
-        "//article/div/section[2]/button[2]",
-        "//div[@id='main-content-video_detail']/div/div[2]/div/div/div/div[5]/div[2]/button"
+        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(5) > div:nth-child(2) > button",
+        "article > div > section:nth-child(2) > button:nth-child(2)"
     ],
     "favorite": [
-        "//article/div/section[2]/div[4]",
-        "//div[@id='main-content-video_detail']/div/div[2]/div/div/div/div[5]/div[2]/div[3]/button"
+        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(5) > div:nth-child(2) > div:nth-child(3) > button",
+        "article > div > section:nth-child(2) > div:nth-child(4)",
+    ],
+    "comment-input-field": [
+        "div.DraftEditor-editorContainer > div.notranslate.public-DraftEditor-content[aria-describedby^='placeholder']",
+    ],
+    "open-comment": [
+        "#comments > button"
+    ],
+    "post-button": [
+        "div[data-e2e='comment-post']"
     ]
 }

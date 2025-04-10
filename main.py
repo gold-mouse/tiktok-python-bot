@@ -73,11 +73,7 @@ def keyword_search():
 def close_driver():
     username = request.args.get("username", "")
     
-    driver = driver_model.get_driver(username)
-
-    if driver != None:
-        driver.quit()
-        driver_model.remove_driver(username)
+    driver_model.remove_driver(username)
 
     return jsonify({"status": True, "message": f"Chrome closed for {username}"})
 

@@ -13,7 +13,8 @@ class DriverModel:
 
 
     def remove_driver(self, username: str):
-        self.drivers.pop(username)
+        driver = self.drivers.pop(username)
+        driver.quit()
         
     def check_driver(self, username: str) -> bool:
         return username in self.drivers

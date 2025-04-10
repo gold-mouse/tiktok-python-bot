@@ -31,12 +31,14 @@ def bypass_robot(driver: Any):
     sleep_like_human(1, 3)
 
 def navigate(driver: Any, link: str) -> Any:
+    update_status(f"Navigating to {link}", "info")
     driver.get(link)
     sleep_like_human(1, 3)
     bypass_robot(driver)
     return driver
 
 def refresh(driver: Any) -> None:
+    update_status(f"Refreshing page {driver.current_url}", "info")
     driver.refresh()
     sleep_like_human(1, 3)
     bypass_robot(driver)
@@ -176,6 +178,7 @@ def login(username: str, password: str) -> Dict[str, Any] | None:
     isSuccess = wait_and_get_element(driver=driver, selectorStr="button[role='searchbox']", by=By.CSS_SELECTOR, logStr="Checking if logged in...", waitTime=30, retry=1)
 
     if isSuccess == None:
+        driver_model.remove_driver(username)
         return { "status": False, "message": "Login failed" }
     
     bypass_robot(driver)

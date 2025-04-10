@@ -11,11 +11,13 @@ BYPASSING_BOT_API_KEY = os.getenv('BYPASSING_BOT_API_KEY', "")
 
 ELEMENT_CSS = {
     "heart": [
+        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(4) > div:nth-child(2) > button",
         "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(5) > div:nth-child(2) > button",
         "article > div > section:nth-child(2) > button:nth-child(2)"
     ],
     "favorite": [
-        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(5) > div:nth-child(2) > div:nth-child(3) > button",
+        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(4) > div:nth-child(2) > div > button",
+        "#main-content-video_detail > div > div:nth-child(2) > div > div > div > div:nth-child(5) > div:nth-child(2) > div > button",
         "article > div > section:nth-child(2) > div:nth-child(4)",
     ],
     "comment-input-field": [

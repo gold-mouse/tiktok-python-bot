@@ -87,11 +87,11 @@ def retry_action(driver: Any, selectorStr: Union[str, List[str]], by: str, logSt
 
     return False
 
-def wait_and_get_element(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> Any:
+def wait_and_get_element(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT, waitTime: int = 10) -> Any:
     def action(selector: str):
         try:
             update_status("Getting Element...")
-            return WebDriverWait(driver, 10).until(EC.presence_of_element_located((by, selector)))
+            return WebDriverWait(driver, waitTime).until(EC.presence_of_element_located((by, selector)))
         except Exception:  # type: ignore
             return None
 
@@ -105,11 +105,11 @@ def wait_and_get_element(driver: Any, selectorStr: Union[str, List[str]], by: st
 
     return result[0] if retry_action(driver, selectorStr, by, logStr, wrapped_action, retry) else None
 
-def wait_and_click(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT) -> bool:
+def wait_and_click(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, retry: int = RETRYABLE_COUNT, waitTime: int = 10) -> bool:
     def action(selector: str) -> bool:
         try:
             update_status("Getting Element...")
-            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector))).click()
+            WebDriverWait(driver, waitTime).until(EC.element_to_be_clickable((by, selector))).click()
             sleep_like_human()
             return True
         except Exception:  # type: ignore
@@ -117,11 +117,11 @@ def wait_and_click(driver: Any, selectorStr: Union[str, List[str]], by: str, log
 
     return retry_action(driver, selectorStr, by, logStr, action, retry)
 
-def wait_and_send_keys(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, keys: str, retry: int = RETRYABLE_COUNT) -> bool:
+def wait_and_send_keys(driver: Any, selectorStr: Union[str, List[str]], by: str, logStr: str, keys: str, retry: int = RETRYABLE_COUNT, waitTime: int = 10) -> bool:
     def action(selector: str) -> bool:
         try:
             update_status("Getting Element...")
-            element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((by, selector)))
+            element = WebDriverWait(driver, waitTime).until(EC.element_to_be_clickable((by, selector)))
             human_typing(element, keys)
             sleep_like_human()
             return True
@@ -171,6 +171,15 @@ def login(username: str, password: str) -> Dict[str, Any] | None:
 
     wait_and_click(driver=driver, selectorStr="//form//button[@type='submit']", retry=1, by=By.XPATH, logStr="Logging in...")
 
+    sleep(2)
+    
+    isSuccess = wait_and_get_element(driver=driver, selectorStr="button[role='searchbox']", by=By.CSS_SELECTOR, logStr="Checking if logged in...", waitTime=30, retry=1)
+
+    if isSuccess == None:
+        return { "status": False, "message": "Login failed" }
+    
+    bypass_robot(driver)
+
     driver_model.set_driver(username, driver)
 
     return { "status": True, "message": "success" }
@@ -206,8 +215,8 @@ def search(username: str, keyword: str, comment: str) -> Dict[str, Any] | None:
     update_status("Processing video...")
 
     if len(searched_videos) > 0:
-        searched_videos = searched_videos[:5] # splice first 5 for testing porses
-        update_status("Only processing first 5 videos for testing purposes", "info")
+        searched_videos = searched_videos[:3] # splice first 3 for testing porses
+        update_status("Only processing first 3 videos for testing purposes", "info")
 
 
     return {
@@ -231,11 +240,11 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
     sleep_like_human(2, 4)
 
     videoEl = None
-    for i in range(RETRYABLE_COUNT):
+    for i in range(RETRYABLE_COUNT): # type: ignore
         try:
             videoEl = wait_and_get_element(driver=driver, selectorStr="video", by=By.CSS_SELECTOR, logStr="Getting video element...")
             break
-        except Exception as e:
+        except Exception as e: # type: ignore
             update_status("Not found video element", "error")
             bypass_robot(driver)
 
@@ -243,6 +252,8 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
         return { "success": False, "message": "Video not found" }
 
     driver.execute_script("arguments[0].pause()", videoEl) # once video is finished, necessary elements are disappeared. so it must be paused first
+
+    sleep_like_human(2, 4)
 
     heart_res = wait_and_click(driver=driver, selectorStr=ELEMENT_CSS.get("heart", []), logStr="Clicking heart...", by=By.CSS_SELECTOR)
 
@@ -284,7 +295,7 @@ def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
             element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-post']"))) # type: ignore
             driver.execute_script("arguments[0].click();", element) # type: ignore
             return True
-        except Exception as e:
+        except Exception as e: # type: ignore
             print("Failed to post comment", "error")
             return False
 

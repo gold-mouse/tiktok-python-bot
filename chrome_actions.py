@@ -278,11 +278,15 @@ def main_action(username: str, link: str, comment: str) -> Dict[str, Any] | None
     }
 
 def leaveComment(driver: str, comment: str = "Wonderful, I like it") -> bool:
+    comments = [c.strip() for c in comment.split(",") if c.strip()]
+    random_comment = random.choice(comments)
+
     for i in range(2): # check if comment button is opened. If not, open it on second trying
         sendKey_res = wait_and_send_keys(
             driver=driver,
             selectorStr=ELEMENT_CSS.get("comment-input-field", []),
-            keys=comment, logStr="Sending comment...",
+            keys=random_comment,
+            logStr="Sending comment...",
             by=By.CSS_SELECTOR,
             retry=1
         )

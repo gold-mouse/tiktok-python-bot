@@ -5,6 +5,7 @@ Ensure you have the hearting installed on your system:
 1. Python
 2. Google Chrome latest version
 3. Ensure Google Chrome Path - C:\Program Files\Google\Chrome\Application\chrome.exe
+4. Admin Bot UI (https://github.com/gold-mouse/tiktok-bot-admin.git)
 
 ### Install Python
 Download and install Python from the [official Python website](https://www.python.org/downloads/).

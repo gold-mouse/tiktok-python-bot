@@ -1,3 +1,7 @@
+Workflow Video
+[![Watch demo](./thumbnail.png)](https://drive.google.com/uc?export=preview&id=1XA9SRrQkrqHuE140whhXnbcPno7GzQXP)
+[![Watch demo](./thumbnail.png)](https://drive.google.com/uc?export=preview&id=17gAfDu3zfUAvyJ04vUXr0WBcXHUqGYQu)
+
 # Python Project Setup Guide
 
 ## Prerequisites

@@ -4,7 +4,7 @@ from datetime import datetime
 from colorama import Fore
 import random
 
-from constants import MAX_DELAY, MIN_DELAY
+from app.constants import MAX_DELAY, MIN_DELAY
 
 def update_status(msg: str, context: str = "normal"):
     now = datetime.now()

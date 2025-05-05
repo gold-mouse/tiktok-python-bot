@@ -12,10 +12,10 @@ from halo import Halo # type: ignore
 from selenium.webdriver.common.by import By
 from typing import Dict, Any, List, Union, Callable
 
-from model import driver_model
-from utility import sleep_like_human, update_status
+from app.model import driver_model
+from app.utility import sleep_like_human, update_status
 
-from constants import RETRYABLE_COUNT, BYPASSING_BOT_API_KEY, ELEMENT_CSS
+from app.constants import RETRYABLE_COUNT, BYPASSING_BOT_API_KEY, ELEMENT_CSS
 
 def bypass_robot(driver: Any):
     update_status("Solving Captcha if present...", "info")

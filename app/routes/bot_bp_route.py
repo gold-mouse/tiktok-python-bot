@@ -1,15 +1,11 @@
 from time import sleep
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Blueprint, jsonify, request
+from app.model import driver_model
+from app.services.chrome_auto_service import launch_driver, login, search
 
-from constants import PORT
-from chrome_actions import launch_driver, login, search
-from model import driver_model
+bot_bp = Blueprint('bot', __name__)
 
-app = Flask(__name__, static_folder="views", static_url_path="")
-CORS(app)
-
-@app.before_request
+@bot_bp.before_request
 def before_request_middleware():
     open_chrome_endpoints = [
         "user_login",
@@ -31,7 +27,7 @@ def before_request_middleware():
             driver_model.set_driver(username, driver)
             sleep(7)
 
-@app.route("/api/user-login", methods=["POST"])
+@bot_bp.route("/user-login", methods=["POST"])
 def user_login():
     try:
         body = request.get_json()
@@ -48,11 +44,11 @@ def user_login():
         print(e)
         return jsonify({ "status": False, "message": "Something went wrong" })
     
-@app.route("/api/get-users", methods=["GET"])
+@bot_bp.route("/get-users", methods=["GET"])
 def get_users():
     return jsonify({ "status": True, "data": [{ "id": i + 1, "username": username } for i, username in enumerate(driver_model.get_usernames_from_driverkyes())] }), 200
 
-@app.route("/api/keyword-search", methods=["GET"])
+@bot_bp.route("/keyword-search", methods=["GET"])
 def keyword_search():
     try:
         keyword = request.args.get("keyword", "")
@@ -69,7 +65,7 @@ def keyword_search():
         print(e)
         return jsonify({ "status": False, "message": "Something went wrong" })
 
-@app.route("/api/close-driver", methods=["GET"])
+@bot_bp.route("/close-driver", methods=["GET"])
 def close_driver():
     username = request.args.get("username", "")
     
@@ -77,12 +73,9 @@ def close_driver():
 
     return jsonify({"status": True, "message": f"Chrome closed for {username}"})
 
-@app.route("/api/test", methods=["GET"])
+@bot_bp.route("/test", methods=["GET"])
 def test():
     username = request.args.get("username", "")
     launch_driver(username)
     print(username, "-------->>>>good")
     return "test", 200
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=PORT)
